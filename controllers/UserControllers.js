@@ -1,3 +1,5 @@
+
+
 class UserController {
 
     constructor(formId, tableId) {
@@ -17,37 +19,49 @@ class UserController {
 
             let values = this.getValues();
 
-            values.photo = "";
-            this.getPhoto((content) => {
+            this.getPhoto().then((content) => {
                 values.photo = content;
-                this.addLine(values)
-            });
+                this.addLine(values);
 
+            },
+                (e) => {
+                    console.error(e)
+                }
 
-
-
-
-
+            );
         });
     }
 
-    getPhoto(callback) {
-        let fileReader = new FileReader();
+    getPhoto() {
+        return new Promise((resolve, reject) => {
+            let fileReader = new FileReader();
 
-        let elements = [...this.formEl.elements].filter(item => {
-            if (item.name === 'photo') {
-                return item;
+            let elements = [...this.formEl.elements].filter(item => {
+                if (item.name === 'photo') {
+                    return item;
+                }
+            });
+            let file = elements[0].files[0];
+
+            fileReader.onload = () => {
+
+                resolve(fileReader.result);
+
+            };
+            fileReader.onerror = (e) => {
+                reject(e);
+            }
+
+            if (file) {
+                fileReader.readAsDataURL(file);
+            } else {
+                resolve('dist/img/boxed-bg.jpg');
             }
 
         });
-        let file = elements[0].files[0];
 
-        fileReader.onload = () => {
 
-            callback(fileReader.result);
 
-        }
-        fileReader.readAsDataURL(file);
     }
 
 
@@ -61,6 +75,8 @@ class UserController {
                 if (field.cheked) {
                     user[field.name] = field.Value;
                 }
+            } else if (field.name == "admin") {
+                user[field.name] = field.checked;
             } else {
                 user[field.name] = field.value;
             }
@@ -82,20 +98,22 @@ class UserController {
     }
 
     addLine(dataUser) {
+        let tr = document.createElement("tr");
 
-
-        this.tableEl.innerHTML =
-            `<tr>
+        tr.innerHTML =
+            `
             <td><img src="${dataUser.photo}" alt="User Image" class="img-circle img-sm"></td>
             <td>${dataUser.name}</td>
             <td>${dataUser.email}</td>
-            <td>${dataUser.admin}</td>
+            <td>${(dataUser.admin) ? 'Sim' : 'Não'}</td>
             <td>${dataUser.birth}</td>
             <td>
             <button type="button" class="btn btn-primary btn-xs btn-flat">Editar</button>
             <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
             </td>
-        </tr>`;
+        `;
+
+        this.tableEl.appendChild(tr);
     }
 
 
