@@ -8,20 +8,28 @@ class UserController {
         this.tableEl = document.getElementById(tableId);
 
         this.onSubmit();
-
-
     }
 
     onSubmit() {
 
         this.formEl.addEventListener("submit", event => {
             event.preventDefault();
+            let btn = this.formEl.querySelector("[type=submit]");
+
+            btn.disabled = true;
 
             let values = this.getValues();
 
+            if (!values) return false;
+
             this.getPhoto().then((content) => {
+
                 values.photo = content;
                 this.addLine(values);
+
+                this.formEl.reset();
+
+                btn.disabled = false;
 
             },
                 (e) => {
@@ -60,16 +68,20 @@ class UserController {
 
         });
 
-
-
     }
-
 
     getValues() {
 
         let user = {};
+        let isValet = true;
         //spread
         [...this.formEl.elements].forEach(function (field, index) {
+
+            if (['name', 'email', 'password'].indexOf(field.name) > -1 && !field.value) {
+
+                field.parentElement.classList.add('has-error');
+                isValet = false;
+            }
 
             if (field.name == "gender") {
                 if (field.cheked) {
@@ -83,6 +95,9 @@ class UserController {
 
         });
 
+        if (!isValet) {
+            return false;
+        }
         return new User(
             user.name,
             user.gender,
@@ -100,13 +115,15 @@ class UserController {
     addLine(dataUser) {
         let tr = document.createElement("tr");
 
+        tr.dataset.user = JSON.stringify(dataUser);
+
         tr.innerHTML =
             `
             <td><img src="${dataUser.photo}" alt="User Image" class="img-circle img-sm"></td>
             <td>${dataUser.name}</td>
             <td>${dataUser.email}</td>
             <td>${(dataUser.admin) ? 'Sim' : 'Não'}</td>
-            <td>${dataUser.birth}</td>
+            <td>${Utils.dateFormat(dataUser.register)}</td>
             <td>
             <button type="button" class="btn btn-primary btn-xs btn-flat">Editar</button>
             <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
@@ -114,7 +131,26 @@ class UserController {
         `;
 
         this.tableEl.appendChild(tr);
+
+        this.updateCount();
     }
 
+    updateCount() {
+        let numberUsers = 0;
+        let numberAdmin = 0;
+
+        [...this.tableEl.children].forEach(tr => {
+
+            numberUsers++;
+
+            let user = JSON.parse(tr.dataset.user);
+
+            if (user._admin) numberAdmin++;
+        });
+
+        document.querySelector("#number-users").innerHTML = numberUsers;
+        document.querySelector("#number-users-admin").innerHTML = numberAdmin;
+
+    }
 
 }
